@@ -26,10 +26,9 @@ from deep_sort_pytorch.deep_sort import DeepSort
 from collections import deque
 
 
-
-
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 data_deque = {}
+
 
 def xyxy_to_xywh(*xyxy):
     """" Calculates the relative bounding box from absolute pixel values. """
@@ -42,6 +41,7 @@ def xyxy_to_xywh(*xyxy):
     w = bbox_w
     h = bbox_h
     return x_c, y_c, w, h
+
 
 def xyxy_to_tlwh(bbox_xyxy):
     tlwh_bboxs = []
@@ -60,67 +60,11 @@ def compute_color_for_labels(label):
     """
     Simple function that adds fixed color depending on the class
     """
-    if label == 0: #person  #BGR
-        color = (85,45,255)
-    elif label == 2: # Car
-        color = (222,82,175)
-    elif label == 3:  # Motobike
-        color = (0, 204, 255)
-    elif label == 5:  # Bus
-        color = (0, 149, 255)
-    else:
-        color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
+    color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
     return tuple(color)
 
-def draw_border(img, pt1, pt2, color, thickness, r, d):
-    x1,y1 = pt1
-    x2,y2 = pt2
-    # Top left
-    cv2.line(img, (x1 + r, y1), (x1 + r + d, y1), color, thickness)
-    cv2.line(img, (x1, y1 + r), (x1, y1 + r + d), color, thickness)
-    cv2.ellipse(img, (x1 + r, y1 + r), (r, r), 180, 0, 90, color, thickness)
 
-    # Top right
-    cv2.line(img, (x2 - r, y1), (x2 - r - d, y1), color, thickness)
-    cv2.line(img, (x2, y1 + r), (x2, y1 + r + d), color, thickness)
-    cv2.ellipse(img, (x2 - r, y1 + r), (r, r), 270, 0, 90, color, thickness)
-    # Bottom left
-    cv2.line(img, (x1 + r, y2), (x1 + r + d, y2), color, thickness)
-    cv2.line(img, (x1, y2 - r), (x1, y2 - r - d), color, thickness)
-    cv2.ellipse(img, (x1 + r, y2 - r), (r, r), 90, 0, 90, color, thickness)
-    # Bottom right
-    cv2.line(img, (x2 - r, y2), (x2 - r - d, y2), color, thickness)
-    cv2.line(img, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
-    cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
-
-    cv2.rectangle(img, (x1 + r, y1), (x2 - r, y2), color, -1, cv2.LINE_AA)
-    cv2.rectangle(img, (x1, y1 + r), (x2, y2 - r - d), color, -1, cv2.LINE_AA)
-    
-    cv2.circle(img, (x1 +r, y1+r), 2, color, 12)
-    cv2.circle(img, (x2 -r, y1+r), 2, color, 12)
-    cv2.circle(img, (x1 +r, y2-r), 2, color, 12)
-    cv2.circle(img, (x2 -r, y2-r), 2, color, 12)
-    
-    return img
-
-
-def UI_box(x, img, color=None, label=None, line_thickness=None):
-    # Plots one bounding box on image img
-    tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
-    color = color or [random.randint(0, 255) for _ in range(3)]
-    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
-    # cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
-    if label:
-        tf = max(tl - 1, 1)  # font thickness
-        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
-        # c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        
-        img = draw_border(img, (c1[0], c1[1] - t_size[1] -3), (c1[0] + t_size[0], c1[1]+3), color, 1, 8, 2)
-        # cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
-
-
-def draw_boxes(img, bbox, object_id, identities=None, offset=(0, 0)):
+def draw_boxes(img, bbox, identities=None, offset=(0, 0)):
     # print(len(identities))
     # print(type(identities))
 
@@ -140,7 +84,7 @@ def draw_boxes(img, bbox, object_id, identities=None, offset=(0, 0)):
         # code to find center of bottom edge
         center = (int((x2+x1)/ 2), int((y2+y2)/2))
         # draw circle at center
-        # cv2.circle(img, center, 5, (0, 0, 255), -1)
+        cv2.circle(img, center, 5, (0, 0, 255), -1)
         # pts.appendleft(center)
         # deque[key].appendleft(center)
 
@@ -151,7 +95,7 @@ def draw_boxes(img, bbox, object_id, identities=None, offset=(0, 0)):
         if id not in data_deque:  
           data_deque[id] = deque(maxlen= opt.trailslen)
 
-        color = compute_color_for_labels(object_id[i])
+        color = compute_color_for_labels(id)
 
         # add center to buffer
         data_deque[id].appendleft(center)
@@ -172,14 +116,15 @@ def draw_boxes(img, bbox, object_id, identities=None, offset=(0, 0)):
 
 
         # box text and bar
-        # label = '{}{:d}'.format("", id)
-        # t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 2, 2)[0]
-        # cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
-        # cv2.rectangle(
-        #     img, (x1, y1), (x1 + t_size[0] + 3, y1 + t_size[1] + 4), color, -1)
-        # cv2.putText(img, label, (x1, y1 +
-        #                          t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
+        label = '{}{:d}'.format("", id)
+        t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 2, 2)[0]
+        cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
+        cv2.rectangle(
+            img, (x1, y1), (x1 + t_size[0] + 3, y1 + t_size[1] + 4), color, -1)
+        cv2.putText(img, label, (x1, y1 +
+                                 t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
     return img
+
 
 def load_classes(path):
     # Loads *.names file at 'path'
@@ -187,22 +132,21 @@ def load_classes(path):
         names = f.read().split('\n')
     return list(filter(None, names))  # filter removes empty strings (such as last line)
 
+
 def detect(save_img=False):
-    prevTime = 0
     out, source, weights, view_img, save_txt, imgsz, cfg, names = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.cfg, opt.names
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     # initialize deepsort
     cfg_deep = get_config()
-    cfg_deep.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
+    cfg_deep.merge_from_file(opt.data)
     # attempt_download("deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7", repo='mikel-brostrom/Yolov5_DeepSort_Pytorch')
     deepsort = DeepSort(cfg_deep.DEEPSORT.REID_CKPT,
                         max_dist=cfg_deep.DEEPSORT.MAX_DIST, min_confidence=cfg_deep.DEEPSORT.MIN_CONFIDENCE,
                         nms_max_overlap=cfg_deep.DEEPSORT.NMS_MAX_OVERLAP, max_iou_distance=cfg_deep.DEEPSORT.MAX_IOU_DISTANCE,
                         max_age=cfg_deep.DEEPSORT.MAX_AGE, n_init=cfg_deep.DEEPSORT.N_INIT, nn_budget=cfg_deep.DEEPSORT.NN_BUDGET,
                         use_cuda=True)
-
 
     # Initialize
     device = select_device(opt.device)
@@ -212,7 +156,7 @@ def detect(save_img=False):
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    model = Darknet(cfg, imgsz)#.cuda()
+    model = Darknet(cfg, imgsz).cuda()
     model.load_state_dict(torch.load(weights[0], map_location=device)['model'])
     #model = attempt_load(weights, map_location=device)  # load FP32 model
     #imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
@@ -294,9 +238,6 @@ def detect(save_img=False):
                     xywh_obj = [x_c, y_c, bbox_w, bbox_h]
                     xywh_bboxs.append(xywh_obj)
                     confs.append([conf.item()])
-                    label = '%s' % (names[int(cls)])
-                    color = compute_color_for_labels(int(cls))
-                    UI_box(xyxy, im0, label=label, color=color, line_thickness=2)
                     oids.append(int(cls))
 
                     if save_txt:  # Write to file
@@ -310,16 +251,13 @@ def detect(save_img=False):
 
                 xywhs = torch.Tensor(xywh_bboxs)
                 confss = torch.Tensor(confs)
-                
-                outputs = deepsort.update(xywhs, confss, oids, im0)
+
+                #outputs = deepsort.update(xywhs, confss, oids, im0)
+                outputs = deepsort.update(xywhs, confss, im0)
                 if len(outputs) > 0:
                     bbox_xyxy = outputs[:, :4]
-                    identities = outputs[:, -2]
-                    object_id = outputs[:, -1]
-                    # print(identities)
-                    # print(object_id)
-
-                    draw_boxes(im0, bbox_xyxy, object_id,identities)
+                    identities = outputs[:, -1]
+                    draw_boxes(im0, bbox_xyxy, identities)
 
 
             # Print time (inference + NMS)
@@ -327,12 +265,6 @@ def detect(save_img=False):
 
             # Stream results
             if view_img:
-                currTime = time.time()
-                fps = 1 / (currTime - prevTime)
-                prevTime = currTime
-                cv2.line(im0, (20,25), (127,25), [85,45,255], 30)
-                #im0 = draw_border(im0, (15, 60), (150, 30), color, 1, 1, 6)
-                cv2.putText(im0, f'FPS: {int(fps)}', (11, 35), 0, 1, [225, 255, 255], thickness=2, lineType=cv2.LINE_AA)
                 cv2.imshow(p, im0)
                 if cv2.waitKey(1) == ord('q'):  # q to quit
                     raise StopIteration
@@ -367,10 +299,11 @@ if __name__ == '__main__':
     parser.add_argument('--weights', nargs='+', type=str, default='yolor_p6.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
+    parser.add_argument('--data', type=str, default='deep_sort_pytorch/configs/deep_sort.yaml', help='deep_sort.yaml path')
     parser.add_argument('--img-size', type=int, default=1280, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
-    parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')

@@ -25,7 +25,6 @@ from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
 
 
-
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 
 
@@ -40,6 +39,7 @@ def xyxy_to_xywh(*xyxy):
     w = bbox_w
     h = bbox_h
     return x_c, y_c, w, h
+
 
 def xyxy_to_tlwh(bbox_xyxy):
     tlwh_bboxs = []
@@ -88,6 +88,7 @@ def load_classes(path):
         names = f.read().split('\n')
     return list(filter(None, names))  # filter removes empty strings (such as last line)
 
+
 def detect(save_img=False):
     out, source, weights, view_img, save_txt, imgsz, cfg, names = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.cfg, opt.names
@@ -95,14 +96,13 @@ def detect(save_img=False):
 
     # initialize deepsort
     cfg_deep = get_config()
-    cfg_deep.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
+    cfg_deep.merge_from_file(opt.data)
     # attempt_download("deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7", repo='mikel-brostrom/Yolov5_DeepSort_Pytorch')
     deepsort = DeepSort(cfg_deep.DEEPSORT.REID_CKPT,
                         max_dist=cfg_deep.DEEPSORT.MAX_DIST, min_confidence=cfg_deep.DEEPSORT.MIN_CONFIDENCE,
                         nms_max_overlap=cfg_deep.DEEPSORT.NMS_MAX_OVERLAP, max_iou_distance=cfg_deep.DEEPSORT.MAX_IOU_DISTANCE,
                         max_age=cfg_deep.DEEPSORT.MAX_AGE, n_init=cfg_deep.DEEPSORT.N_INIT, nn_budget=cfg_deep.DEEPSORT.NN_BUDGET,
                         use_cuda=True)
-
 
     # Initialize
     device = select_device(opt.device)
@@ -253,6 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights', nargs='+', type=str, default='yolor_p6.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
+    parser.add_argument('--data', type=str, default='deep_sort_pytorch/configs/deep_sort.yaml', help='deep_sort.yaml path')
     parser.add_argument('--img-size', type=int, default=1280, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
